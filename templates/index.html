@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FoodLink AI — AI-Powered Surplus Food Redistribution Platform</title>
+  
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  
+  <!-- Custom Modern SaaS Styles -->
+  <link rel="stylesheet" href="/static/css/style.css">
+  
+  <!-- Leaflet JS & Chart.js -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+      <div class="brand-section">
+        <div class="brand-logo">
+          <div class="logo-icon">🌿</div>
+          <div class="brand-text">
+            <h1>FoodLink AI</h1>
+            <div class="brand-tagline">Turning Surplus into Support</div>
+          </div>
+        </div>
+      </div>
+
+      <ul class="nav-menu">
+        <li class="nav-item active" data-view="dashboard">
+          <button type="button"><span class="nav-icon">📊</span> Main Dashboard</button>
+        </li>
+        <li class="nav-item" data-view="donors">
+          <button type="button"><span class="nav-icon">🏢</span> Donor Directory</button>
+        </li>
+        <li class="nav-item" data-view="ngos">
+          <button type="button"><span class="nav-icon">🤝</span> NGO Recipients</button>
+        </li>
+        <li class="nav-item" data-view="donations">
+          <button type="button"><span class="nav-icon">🍲</span> Food Donations</button>
+        </li>
+        <li class="nav-item" data-view="matching">
+          <button type="button"><span class="nav-icon">🎯</span> AI Smart Matching</button>
+        </li>
+        <li class="nav-item" data-view="forecasting">
+          <button type="button"><span class="nav-icon">📈</span> Demand Forecast</button>
+        </li>
+        <li class="nav-item" data-view="routing">
+          <button type="button"><span class="nav-icon">🗺️</span> Route Optimization</button>
+        </li>
+        <li class="nav-item" data-view="food-safety">
+          <button type="button"><span class="nav-icon">🛡️</span> Food Safety Inspector</button>
+        </li>
+        <li class="nav-item" data-view="notifications">
+          <button type="button"><span class="nav-icon">🔔</span> Live Dispatch Alerts</button>
+        </li>
+      </ul>
+
+      <div class="sidebar-footer">
+        <div class="status-indicator">
+          <span class="pulse-dot"></span>
+          <span id="systemStatusText">Tricity Node Online (Chandigarh/Mohali)</span>
+        </div>
+        <div style="font-size: 11px; opacity: 0.7;">
+          Engine: SQLite • OSRM • Gemini AI
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Wrapper -->
+    <div class="main-wrapper">
+      <!-- Top Navigation Header -->
+      <header class="top-header">
+        <div class="header-left">
+          <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle Menu">☰</button>
+          <div class="page-title-wrap">
+            <h2 id="currentPageTitle">Operations Dashboard</h2>
+            <p id="currentPageSubtitle">Real-time surplus food logistics, matching & safety telemetry</p>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <button class="btn btn-secondary btn-sm" id="btnHeaderNotifs" title="View Live SMS, WhatsApp & Volunteer Route Dispatches" style="display: flex; align-items: center; gap: 6px;">
+            <span>🔔</span> <span>Alerts</span> <span class="badge badge-danger" id="notifBadgeCount" style="padding: 1px 6px; font-size: 11px;">0</span>
+          </button>
+          <button class="btn btn-secondary btn-sm" id="btnResetSeed" title="Reset sample Chandigarh & Mohali demonstration data">
+            🔄 Reset Demo Seed
+          </button>
+          <div class="badge badge-info" id="aiStatusBadge" style="padding: 6px 12px;">
+            ✨ Gemini Ready
+          </div>
+        </div>
+      </header>
+
+      <!-- Content Views Body -->
+      <main class="content-body">
+
+        <!-- ========================================== -->
+        <!-- VIEW 1: MAIN DASHBOARD                     -->
+        <!-- ========================================== -->
+        <section id="view-dashboard" class="view-section active">
+          <!-- Urgent Donations Notification Banner -->
+          <div id="urgentAlertBox" class="alert-banner" style="display: none;">
+            <div class="alert-content">
+              <span style="font-size: 20px;">⚡</span>
+              <div>
+                <strong>Urgent Surplus Alerts Detected:</strong>
+                <span id="urgentAlertCount">0</span> donation(s) require collection within the next 3.5 hours to avoid spoilage.
+              </div>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="navigateTo('matching')">Match Urgent Batch</button>
+          </div>
+
+          <!-- KPI Cards Grid -->
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-info">
+                <h4>Registered Donors</h4>
+                <div class="kpi-value" id="kpiTotalDonors">0</div>
+                <div class="kpi-meta">Canteens, caterers & diners</div>
+              </div>
+              <div class="kpi-icon icon-green">🏢</div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-info">
+                <h4>Total Meals Available</h4>
+                <div class="kpi-value" id="kpiTotalMeals">0</div>
+                <div class="kpi-meta">Logged today across Tricity</div>
+              </div>
+              <div class="kpi-icon icon-blue">🍲</div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-info">
+                <h4>Meals Allocated</h4>
+                <div class="kpi-value" id="kpiMealsAllocated">0</div>
+                <div class="kpi-meta" id="kpiAllocatedPct">0% redistributed</div>
+              </div>
+              <div class="kpi-icon icon-purple">🤝</div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-info">
+                <h4>Active Recipient NGOs</h4>
+                <div class="kpi-value" id="kpiActiveNgos">0</div>
+                <div class="kpi-meta">Community kitchens & shelters</div>
+              </div>
+              <div class="kpi-icon icon-amber">🛡️</div>
+            </div>
+          </div>
+
+          <!-- AI Operations Intelligence Card -->
+          <div class="ai-copilot-box">
+            <div class="ai-copilot-header">
+              <span class="ai-sparkle">✨</span>
+              <span class="ai-copilot-title">Gemini Autonomous Redistribution Intelligence</span>
+              <span class="badge badge-info" id="geminiModelTag" style="margin-left: auto;">Gemini 2.5 Flash</span>
+              <button class="btn btn-secondary btn-sm" id="btnRefreshAiInsights" style="padding: 4px 10px;">Refresh Analysis</button>
+            </div>
+            <div class="ai-copilot-body" id="aiInsightsList">
+              <em>Analyzing recent allocations, donor locations and cold-chain constraints...</em>
+            </div>
+          </div>
+
+          <!-- Charts Row -->
+          <div class="grid-2col">
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3 class="card-title">Food Category Distribution</h3>
+                  <div class="card-subtitle">Surplus volume grouped by category</div>
+                </div>
+              </div>
+              <div style="height: 280px; position: relative;">
+                <canvas id="categoryChart"></canvas>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3 class="card-title">Redistribution Pipeline</h3>
+                  <div class="card-subtitle">Available vs Allocated Meal Quantities</div>
+                </div>
+              </div>
+              <div style="height: 280px; position: relative;">
+                <canvas id="pipelineChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Allocations Table -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Recent Redistribution Dispatches</h3>
+                <div class="card-subtitle">Transactionally verified NGO allocations</div>
+              </div>
+              <button class="btn btn-secondary btn-sm" onclick="navigateTo('donations')">View All Donations</button>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Allocation ID</th>
+                    <th>Food Item</th>
+                    <th>Donor</th>
+                    <th>Recipient NGO</th>
+                    <th>Allocated Meals</th>
+                    <th>Distance</th>
+                    <th>Match Score</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="recentAllocationsTbody">
+                  <tr><td colspan="9" style="text-align:center; padding: 20px;">Loading allocations...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- VIEW 2: DONOR MANAGEMENT                  -->
+        <!-- ========================================== -->
+        <section id="view-donors" class="view-section">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Registered Food Donors</h3>
+                <div class="card-subtitle">Canteens, restaurants, hostel messes and banquet caterers in Chandigarh & Mohali</div>
+              </div>
+              <button class="btn btn-primary" id="btnOpenDonorModal">+ Register New Donor</button>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Organization Name</th>
+                    <th>Donor Type</th>
+                    <th>Contact Person</th>
+                    <th>Phone / Email</th>
+                    <th>Address</th>
+                    <th>Coordinates</th>
+                  </tr>
+                </thead>
+                <tbody id="donorsTableBody">
+                  <tr><td colspan="7" style="text-align:center; padding: 20px;">Loading donors...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- VIEW 3: NGO MANAGEMENT                    -->
+        <!-- ========================================== -->
+        <section id="view-ngos" class="view-section">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Recipient Organizations & Shelters</h3>
+                <div class="card-subtitle">Verified community kitchens, food shelters and family relief NGOs</div>
+              </div>
+              <button class="btn btn-primary" id="btnOpenNgoModal">+ Register New NGO</button>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>NGO / Kitchen Name</th>
+                    <th>Type</th>
+                    <th>Contact</th>
+                    <th>Address</th>
+                    <th>Daily Capacity</th>
+                    <th>Current Occupancy</th>
+                    <th>Available Headroom</th>
+                    <th>Dietary Accepted</th>
+                    <th>Forecast</th>
+                  </tr>
+                </thead>
+                <tbody id="ngosTableBody">
+                  <tr><td colspan="10" style="text-align:center; padding: 20px;">Loading NGOs...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- VIEW 4: FOOD DONATION MANAGEMENT          -->
+        <!-- ========================================== -->
+        <section id="view-donations" class="view-section">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Surplus Food Listings</h3>
+                <div class="card-subtitle">Donations screened by category-specific shelf life and storage conditions</div>
+              </div>
+              <button class="btn btn-primary" id="btnOpenDonationModal">+ Log Surplus Food</button>
+            </div>
+
+            <!-- Filter Status Bar -->
+            <div style="display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;">
+              <button class="btn btn-secondary btn-sm active-filter" data-status="ALL" onclick="filterDonations('ALL', this)">All</button>
+              <button class="btn btn-secondary btn-sm" data-status="Available" onclick="filterDonations('Available', this)">Available</button>
+              <button class="btn btn-secondary btn-sm" data-status="Proposed" onclick="filterDonations('Proposed', this)">Proposed</button>
+              <button class="btn btn-secondary btn-sm" data-status="Accepted" onclick="filterDonations('Accepted', this)">Accepted</button>
+              <button class="btn btn-secondary btn-sm" data-status="Rejected" onclick="filterDonations('Rejected', this)">Rejected (Safety)</button>
+            </div>
+
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Food Name</th>
+                    <th>Donor</th>
+                    <th>Category</th>
+                    <th>Total Qty</th>
+                    <th>Unallocated</th>
+                    <th>Storage</th>
+                    <th>Prep Time</th>
+                    <th>Collection Deadline</th>
+                    <th>Safety Status</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="donationsTableBody">
+                  <tr><td colspan="12" style="text-align:center; padding: 20px;">Loading donations...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- VIEW 5: AI SMART MATCHING                 -->
+        <!-- ========================================== -->
+        <section id="view-matching" class="view-section">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">AI Smart Matching Engine</h3>
+                <div class="card-subtitle">Multi-factor weighted scoring (Distance 30%, Quantity 25%, Urgency 20%, Dietary 15%, Capacity 10%)</div>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 16px; align-items: flex-end; margin-bottom: 24px; flex-wrap: wrap;">
+              <div style="flex: 1; min-width: 280px;">
+                <label class="form-label">Select Surplus Donation to Match:</label>
+                <select id="matchDonationSelect" class="form-control">
+                  <option value="">-- Choose active donation --</option>
+                </select>
+              </div>
+              <button class="btn btn-primary" id="btnExecuteMatch">🎯 Run AI Matching Algorithm</button>
+            </div>
+
+            <!-- Donation Context Box -->
+            <div id="matchingDonationContext" style="display: none; background: #f8fafc; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 16px; margin-bottom: 24px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                <div>
+                  <h4 id="matchDonFoodName" style="font-size: 16px; color: var(--navy-900);">Food Item</h4>
+                  <p id="matchDonDetails" style="font-size: 13px; color: var(--navy-600); margin-top: 4px;">Category • Quantity • Donor</p>
+                </div>
+                <div id="matchDonBadge" class="badge badge-success">Available for Allocation</div>
+              </div>
+            </div>
+
+            <!-- Gemini AI Natural Language Logistics Commentary -->
+            <div id="matchingAiBox" class="ai-copilot-box" style="display: none;">
+              <div class="ai-copilot-header">
+                <span class="ai-sparkle">✨</span>
+                <span class="ai-copilot-title">Gemini Dispatch Explanation</span>
+                <span class="badge badge-info" id="matchAiBadge" style="margin-left: auto;">Gemini Verified</span>
+              </div>
+              <div class="ai-copilot-body" id="matchingAiSummary">
+                <!-- AI text inserted here -->
+              </div>
+            </div>
+
+            <!-- Ranked NGO Cards Container -->
+            <div id="matchingResultsContainer">
+              <div style="text-align: center; padding: 40px; color: var(--navy-500);">
+                Select an active donation above and click <strong>Run AI Matching Algorithm</strong> to evaluate candidate recipients.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- VIEW 6: DEMAND FORECASTING                -->
+        <!-- ========================================== -->
+        <section id="view-forecasting" class="view-section">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">NGO Demand Forecasting</h3>
+                <div class="card-subtitle">Baseline Statistical Model: Prediction = (0.5 × Historical) + (0.3 × Recent) + (0.2 × Expected)</div>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 16px; align-items: flex-end; margin-bottom: 24px; flex-wrap: wrap;">
+              <div style="flex: 1; min-width: 280px;">
+                <label class="form-label">Select Recipient NGO:</label>
+                <select id="forecastNgoSelect" class="form-control">
+                  <option value="">-- Choose recipient organization --</option>
+                </select>
+              </div>
+              <button class="btn btn-primary" id="btnLoadForecast">📈 Compute Demand Forecast</button>
+            </div>
+
+            <!-- Forecast Metrics Grid -->
+            <div class="kpi-grid" id="forecastKpiGrid" style="display: none;">
+              <div class="kpi-card">
+                <div class="kpi-info">
+                  <h4>Predicted Demand (Tomorrow)</h4>
+                  <div class="kpi-value" id="fcPredictedMeals" style="color: var(--primary);">0</div>
+                  <div class="kpi-meta">Meals required</div>
+                </div>
+                <div class="kpi-icon icon-green">🎯</div>
+              </div>
+
+              <div class="kpi-card">
+                <div class="kpi-info">
+                  <h4>Historical Average</h4>
+                  <div class="kpi-value" id="fcHistoricalAvg">0</div>
+                  <div class="kpi-meta">Weight: 50%</div>
+                </div>
+                <div class="kpi-icon icon-blue">📊</div>
+              </div>
+
+              <div class="kpi-card">
+                <div class="kpi-info">
+                  <h4>Recent 7-Day Average</h4>
+                  <div class="kpi-value" id="fcRecentAvg">0</div>
+                  <div class="kpi-meta">Weight: 30%</div>
+                </div>
+                <div class="kpi-icon icon-purple">⚡</div>
+              </div>
+
+              <div class="kpi-card">
+                <div class="kpi-info">
+                  <h4>Demand Trend</h4>
+                  <div class="kpi-value" id="fcTrendLabel" style="font-size: 20px;">Stable</div>
+                  <div class="kpi-meta" id="fcTrendPct">0% change</div>
+                </div>
+                <div class="kpi-icon icon-amber">📈</div>
+              </div>
+            </div>
+
+            <!-- Gemini AI Natural Language Forecast Explanation -->
+            <div id="forecastAiBox" class="ai-copilot-box" style="display: none;">
+              <div class="ai-copilot-header">
+                <span class="ai-sparkle">✨</span>
+                <span class="ai-copilot-title">Gemini Demand Insights & Inventory Advice</span>
+                <span class="badge badge-info" id="fcAiBadge" style="margin-left: auto;">Gemini Verified</span>
+              </div>
+              <div class="ai-copilot-body" id="forecastAiSummary">
+                <!-- AI Forecast explanation -->
+              </div>
+            </div>
+
+            <!-- Forecast Chart -->
+            <div class="card" id="forecastChartCard" style="display: none; padding: 20px;">
+              <h4 style="font-size: 15px; font-weight: 700; margin-bottom: 16px;">
+                Historical Demand (Past 14 Days) vs Projected Demand (Next 7 Days)
+              </h4>
+              <div style="height: 320px; position: relative;">
+                <canvas id="forecastChart"></canvas>
+              </div>
+            </div>
+
+            <!-- Statistical Model Transparency Notice -->
+            <div style="margin-top: 16px; font-size: 12px; color: var(--navy-500); border-left: 3px solid #3b82f6; padding-left: 12px;">
+              <strong>Model Transparency Note:</strong> Predictions are computed using a baseline weighted statistical moving-average formula. This is clearly identified as a statistical prototype baseline, not a deep learning neural model.
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- VIEW 7: ROUTE OPTIMIZATION                -->
+        <!-- ========================================== -->
+        <section id="view-routing" class="view-section">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">OSRM Road Route Optimization</h3>
+                <div class="card-subtitle">Real OpenStreetMap driving road network routing, multi-stop sequencing and deadline checks</div>
+              </div>
+            </div>
+
+            <div class="form-grid" style="margin-bottom: 20px;">
+              <div class="form-group">
+                <label class="form-label">Starting Point (Donor):</label>
+                <select id="routeDonorSelect" class="form-control">
+                  <option value="">-- Select Donor Location --</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Delivery Stops (Recipient NGOs):</label>
+                <div id="routeNgoCheckboxes" style="max-height: 140px; overflow-y: auto; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 10px; background: white;">
+                  <em>Loading NGOs...</em>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;">
+              <button class="btn btn-primary" id="btnCalculateRoute">🚗 Optimize Delivery Route</button>
+              <button class="btn btn-secondary" id="btnRouteFromActive">⚡ Load Active Allocation Stops</button>
+              <button class="btn btn-secondary" id="btnShowAllMarkers">📍 Show All Network Locations</button>
+            </div>
+
+            <!-- Fallback / Engine Status Banner -->
+            <div id="routeFallbackBox" class="alert-banner" style="display: none; background: #eff6ff; border-color: #bfdbfe; margin-bottom: 20px;">
+              <div class="alert-content" style="color: #1e40af;">
+                <span style="font-size: 20px;">ℹ️</span>
+                <div id="routeFallbackText">Routing engine notification</div>
+              </div>
+            </div>
+
+            <!-- Route Summary Metrics -->
+            <div id="routeMetricsRow" class="kpi-grid" style="display: none; margin-bottom: 20px;">
+              <div class="kpi-card">
+                <div class="kpi-info">
+                  <h4>Total Road Distance</h4>
+                  <div class="kpi-value" id="routeTotalDistance">0 km</div>
+                  <div class="kpi-meta" id="routeEngineMode">OSRM Road API</div>
+                </div>
+                <div class="kpi-icon icon-blue">🛣️</div>
+              </div>
+
+              <div class="kpi-card">
+                <div class="kpi-info">
+                  <h4>Estimated Transit</h4>
+                  <div class="kpi-value" id="routeTotalDuration">0 min</div>
+                  <div class="kpi-meta" id="routeAlgorithmLabel">Optimized sequence</div>
+                </div>
+                <div class="kpi-icon icon-green">⏱️</div>
+              </div>
+
+              <div class="kpi-card">
+                <div class="kpi-info">
+                  <h4>Est. Completion ETA</h4>
+                  <div class="kpi-value" id="routeCompletionEta" style="color: #059669;">--:--</div>
+                  <div class="kpi-meta">Final stop delivery</div>
+                </div>
+                <div class="kpi-icon icon-amber">🏁</div>
+              </div>
+
+              <div class="kpi-card">
+                <div class="kpi-info">
+                  <h4>Total Stops</h4>
+                  <div class="kpi-value" id="routeStopsCount">0</div>
+                  <div class="kpi-meta">Donor + Recipients</div>
+                </div>
+                <div class="kpi-icon icon-purple">📍</div>
+              </div>
+            </div>
+
+            <!-- Deadline Warnings Banner -->
+            <div id="routeWarningBox" class="alert-banner danger" style="display: none;">
+              <div class="alert-content">
+                <span style="font-size: 20px;">⚠️</span>
+                <div id="routeWarningText">Collection deadline warning</div>
+              </div>
+            </div>
+
+            <!-- Interactive Leaflet Map -->
+            <div id="routeMap"></div>
+
+            <!-- Stop Sequence Steps -->
+            <div id="routeStopsSequenceBox" style="margin-top: 24px; display: none;">
+              <h4 style="font-size: 15px; font-weight: 700; margin-bottom: 12px;">Recommended Stop Sequence:</h4>
+              <div id="routeStopsTimeline" style="display: flex; flex-direction: column; gap: 8px;">
+                <!-- Timeline items rendered dynamically -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- VIEW 8: FOOD SAFETY INSPECTOR             -->
+        <!-- ========================================== -->
+        <section id="view-food-safety" class="view-section">
+          <!-- Regulatory Disclaimer Alert -->
+          <div class="alert-banner" style="background: #f0fdf4; border-color: #bbf7d0;">
+            <div class="alert-content" style="color: #166534;">
+              <span style="font-size: 22px;">🛡️</span>
+              <div>
+                <strong>Food Safety Risk Screening Notice:</strong>
+                FoodLink AI implements automated pre-collection category-dependent shelf life validation and temperature constraints. This system provides logistical risk filtering and does NOT certify food safety. Physical inspection is required at pickup.
+              </div>
+            </div>
+          </div>
+
+          <!-- Interactive Food Safety Calculator -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Interactive Food Safety Simulator</h3>
+                <div class="card-subtitle">Test any category, preparation age, storage condition and collection window</div>
+              </div>
+            </div>
+
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">Food Category:</label>
+                <select id="simCategory" class="form-control">
+                  <option value="Cooked Meals">Cooked Meals</option>
+                  <option value="Perishable Dairy">Perishable Dairy (Paneer/Curd)</option>
+                  <option value="Bakery">Bakery</option>
+                  <option value="Raw Produce">Raw Produce (Fruits/Veg)</option>
+                  <option value="Packaged">Packaged Goods</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Storage Condition:</label>
+                <select id="simStorage" class="form-control">
+                  <option value="Hot-hold (>60°C)">Hot-hold (>60°C)</option>
+                  <option value="Chilled (0-4°C)">Chilled (0-4°C)</option>
+                  <option value="Room Temp (20-25°C)">Room Temp (20-25°C - Danger Zone)</option>
+                  <option value="Frozen (<-18°C)">Frozen (<-18°C)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Hours Elapsed Since Preparation:</label>
+                <input type="number" id="simElapsedHours" class="form-control" value="2" min="0" max="100" step="0.5">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Requested Collection Window (Hours):</label>
+                <input type="number" id="simWindowHours" class="form-control" value="3" min="0.5" max="100" step="0.5">
+              </div>
+            </div>
+
+            <button class="btn btn-primary" id="btnTestSafetySim">🔬 Simulate Safety Evaluation</button>
+
+            <div id="simSafetyResultBox" style="margin-top: 20px; display: none; padding: 16px; border-radius: var(--radius-md);">
+              <!-- Result rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- Safety Audit of All Registered Donations -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Donation Safety Telemetry Audit</h3>
+                <div class="card-subtitle">Live inspection log of all donations submitted to the platform</div>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Food Name</th>
+                    <th>Category</th>
+                    <th>Storage Condition</th>
+                    <th>Prep Time</th>
+                    <th>Collection Deadline</th>
+                    <th>Allergens</th>
+                    <th>Safety Status</th>
+                    <th>Screening Notes / Rejection Reason</th>
+                  </tr>
+                </thead>
+                <tbody id="safetyAuditTableBody">
+                  <tr><td colspan="9" style="text-align:center; padding: 20px;">Loading audit logs...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- VIEW 9: LIVE DISPATCH NOTIFICATIONS       -->
+        <!-- ========================================== -->
+        <section id="view-notifications" class="view-section">
+          <div class="card">
+            <div class="card-header" style="flex-wrap: wrap; gap: 12px;">
+              <div>
+                <h3 class="card-title">Live Message & Notification Dispatch Telemetry</h3>
+                <div class="card-subtitle">Real-time SMS alerts (Donors), WhatsApp notifications (NGOs), and Road Route packets (Delivery Volunteers)</div>
+              </div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button class="btn btn-primary btn-sm" id="btnSimulateNgoAlert">⚡ Test WhatsApp Alert to NGO</button>
+                <button class="btn btn-secondary btn-sm" id="btnSimulateDriverAlert">🚗 Test Volunteer Dispatch</button>
+                <button class="btn btn-secondary btn-sm" id="btnRefreshNotifs">🔄 Refresh Feed</button>
+              </div>
+            </div>
+
+            <!-- Stakeholder Filter Tabs -->
+            <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+              <button class="btn btn-sm btn-primary active-filter" onclick="filterNotifications('ALL', this)">📱 All Dispatches (<span id="notifCountAll">0</span>)</button>
+              <button class="btn btn-sm btn-secondary" onclick="filterNotifications('Donor', this)">💬 Food Donors — SMS (<span id="notifCountDonor">0</span>)</button>
+              <button class="btn btn-sm btn-secondary" onclick="filterNotifications('NGO', this)">🟢 Recipient NGOs — WhatsApp (<span id="notifCountNgo">0</span>)</button>
+              <button class="btn btn-sm btn-secondary" onclick="filterNotifications('Delivery Volunteer', this)">🚗 Delivery Volunteers — Road Route (<span id="notifCountVolunteer">0</span>)</button>
+            </div>
+
+            <!-- Feed Container -->
+            <div id="notificationsFeedContainer" style="display: flex; flex-direction: column; gap: 12px;">
+              <div style="text-align: center; padding: 30px; color: var(--navy-500);">Loading notification telemetry...</div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: REGISTER DONOR                      -->
+  <!-- ========================================== -->
+  <div class="modal-overlay" id="modalDonor">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 style="font-size: 17px; font-weight: 700;">Register Food Donor Organization</h3>
+        <button class="btn btn-secondary btn-sm" onclick="closeModal('modalDonor')">✕</button>
+      </div>
+      <form id="formRegisterDonor">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Organization Name *</label>
+            <input type="text" id="donorName" class="form-control" required placeholder="e.g. PU Student Canteen">
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Donor Type *</label>
+              <select id="donorType" class="form-control">
+                <option value="College Canteen">College Canteen</option>
+                <option value="Restaurant">Restaurant</option>
+                <option value="Hostel Mess">Hostel Mess</option>
+                <option value="Event Catering">Event Catering</option>
+                <option value="Supermarket">Supermarket</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Contact Person *</label>
+              <input type="text" id="donorContact" class="form-control" required placeholder="Full Name">
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Phone Number *</label>
+              <input type="tel" id="donorPhone" class="form-control" required placeholder="+91 98765 00000">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email Address</label>
+              <input type="email" id="donorEmail" class="form-control" placeholder="contact@donor.org">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Street Address *</label>
+            <input type="text" id="donorAddress" class="form-control" required placeholder="Sector / Phase, City">
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Latitude *</label>
+              <input type="number" step="any" id="donorLat" class="form-control" required value="30.7333">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Longitude *</label>
+              <input type="number" step="any" id="donorLon" class="form-control" required value="76.7794">
+            </div>
+          </div>
+          <div style="font-size: 12px; color: var(--navy-500); margin-top: 4px;">
+            Quick Fill: <a href="javascript:void(0)" onclick="setDonorCoords(30.7600, 76.7684, 'Panjab University, Sector 14, Chandigarh')">PU Chandigarh</a> • 
+            <a href="javascript:void(0)" onclick="setDonorCoords(30.7180, 76.7275, 'Phase 3B2, Mohali')">Phase 3B2 Mohali</a> • 
+            <a href="javascript:void(0)" onclick="setDonorCoords(30.7230, 76.7640, 'Sector 35-B, Chandigarh')">Sector 35 Chandigarh</a>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modalDonor')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save & Register</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: REGISTER NGO                        -->
+  <!-- ========================================== -->
+  <div class="modal-overlay" id="modalNgo">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 style="font-size: 17px; font-weight: 700;">Register Recipient NGO / Shelter</h3>
+        <button class="btn btn-secondary btn-sm" onclick="closeModal('modalNgo')">✕</button>
+      </div>
+      <form id="formRegisterNgo">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Organization Name *</label>
+            <input type="text" id="ngoName" class="form-control" required placeholder="e.g. Annapurna Seva Kitchen">
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">NGO Type *</label>
+              <select id="ngoType" class="form-control">
+                <option value="Community Kitchen">Community Kitchen</option>
+                <option value="Food Shelter">Food Shelter</option>
+                <option value="NGO / Family Aid">NGO / Family Aid</option>
+                <option value="Orphanage / Elderly Care">Orphanage / Elderly Care</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Contact Person *</label>
+              <input type="text" id="ngoContact" class="form-control" required placeholder="Manager / Coordinator">
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Phone Number *</label>
+              <input type="tel" id="ngoPhone" class="form-control" required placeholder="+91 98111 00000">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email Address</label>
+              <input type="email" id="ngoEmail" class="form-control" placeholder="ngo@relief.org">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Street Address *</label>
+            <input type="text" id="ngoAddress" class="form-control" required placeholder="Sector / Phase, City">
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Daily Capacity (Meals) *</label>
+              <input type="number" id="ngoCapacity" class="form-control" required value="200" min="10">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Current Occupancy (Meals) *</label>
+              <input type="number" id="ngoOccupancy" class="form-control" required value="50" min="0">
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Latitude *</label>
+              <input type="number" step="any" id="ngoLat" class="form-control" required value="30.7280">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Longitude *</label>
+              <input type="number" step="any" id="ngoLon" class="form-control" required value="76.7780">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Dietary Preferences Accepted:</label>
+            <div style="display: flex; gap: 14px; flex-wrap: wrap;">
+              <label><input type="checkbox" name="ngoDiet" value="Vegetarian" checked> Vegetarian</label>
+              <label><input type="checkbox" name="ngoDiet" value="Vegan"> Vegan</label>
+              <label><input type="checkbox" name="ngoDiet" value="Non-Veg"> Non-Veg</label>
+              <label><input type="checkbox" name="ngoDiet" value="Any" checked> Any</label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modalNgo')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save & Register</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: LOG FOOD DONATION                   -->
+  <!-- ========================================== -->
+  <div class="modal-overlay" id="modalDonation">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 style="font-size: 17px; font-weight: 700;">Log Surplus Food Donation</h3>
+        <button class="btn btn-secondary btn-sm" onclick="closeModal('modalDonation')">✕</button>
+      </div>
+      <form id="formRegisterDonation">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Food Donor *</label>
+            <select id="donDonorId" class="form-control" required>
+              <option value="">-- Select Registered Donor --</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Food Item Name / Description *</label>
+            <input type="text" id="donFoodName" class="form-control" required placeholder="e.g. Steamed Rice, Dal Makhani & Mix Veg">
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Food Category *</label>
+              <select id="donCategory" class="form-control">
+                <option value="Cooked Meals">Cooked Meals (Max 4-6 hrs)</option>
+                <option value="Cooked Meals (Chilled)">Cooked Meals - Chilled (Max 24 hrs)</option>
+                <option value="Perishable Dairy">Perishable Dairy (Max 12 hrs)</option>
+                <option value="Bakery">Bakery (Max 36 hrs)</option>
+                <option value="Raw Produce">Raw Produce (Max 48 hrs)</option>
+                <option value="Packaged">Packaged Goods (Max 72 hrs)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Quantity in Meals / Packets *</label>
+              <input type="number" id="donQuantity" class="form-control" required min="1" placeholder="e.g. 75">
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Preparation Date & Time *</label>
+              <input type="datetime-local" id="donPrepTime" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Collection Deadline *</label>
+              <input type="datetime-local" id="donDeadline" class="form-control" required>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Storage Condition *</label>
+              <select id="donStorage" class="form-control">
+                <option value="Hot-hold (>60°C)">Hot-hold (>60°C)</option>
+                <option value="Chilled (0-4°C)">Chilled (0-4°C)</option>
+                <option value="Room Temp (20-25°C)">Room Temp (20-25°C)</option>
+                <option value="Frozen (<-18°C)">Frozen (<-18°C)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Dietary Classification *</label>
+              <select id="donDietary" class="form-control">
+                <option value="Vegetarian">Vegetarian</option>
+                <option value="Vegan">Vegan</option>
+                <option value="Non-Veg">Non-Veg</option>
+                <option value="Any">Any</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Allergen Declarations:</label>
+            <div style="display: flex; gap: 14px; flex-wrap: wrap;">
+              <label><input type="checkbox" name="donAllergen" value="Dairy"> Dairy</label>
+              <label><input type="checkbox" name="donAllergen" value="Gluten"> Gluten</label>
+              <label><input type="checkbox" name="donAllergen" value="Nuts"> Nuts</label>
+              <label><input type="checkbox" name="donAllergen" value="Soy"> Soy</label>
+              <label><input type="checkbox" name="donAllergen" value="Eggs"> Eggs</label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Preparation & Handling Notes</label>
+            <textarea id="donNotes" class="form-control" placeholder="e.g. Kept in food-grade thermal containers. Ready for immediate pickup."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modalDonation')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Submit with Safety Screening</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: ALLOCATE MEALS TRANSACTION          -->
+  <!-- ========================================== -->
+  <div class="modal-overlay" id="modalAllocate">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 style="font-size: 17px; font-weight: 700;">Confirm Safe Meal Allocation</h3>
+        <button class="btn btn-secondary btn-sm" onclick="closeModal('modalAllocate')">✕</button>
+      </div>
+      <form id="formConfirmAllocation">
+        <input type="hidden" id="allocDonationId">
+        <input type="hidden" id="allocNgoId">
+        <input type="hidden" id="allocDistance">
+        <input type="hidden" id="allocScore">
+
+        <div class="modal-body">
+          <div style="background: #f8fafc; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 14px; margin-bottom: 16px;">
+            <div style="font-weight: 700; color: var(--navy-900);" id="allocTargetNgoName">Recipient Organization</div>
+            <div style="font-size: 12.5px; color: var(--navy-600);" id="allocTargetDetails">Matching Score: 90/100 • Distance: 2.5 km</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Meals to Allocate *</label>
+            <input type="number" id="allocMealsCount" class="form-control" required min="1">
+            <div style="font-size: 12px; color: var(--navy-500); margin-top: 4px;" id="allocMaxAllowedText">
+              Max available: 0 meals
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Logistics Dispatch Notes</label>
+            <input type="text" id="allocNotes" class="form-control" placeholder="e.g. Volunteer dispatch arranged via local e-rickshaw.">
+          </div>
+
+          <div style="font-size: 11.5px; color: var(--navy-500); border-left: 2px solid var(--primary); padding-left: 10px;">
+            Enforced by ACID SQLite transaction. Total allocation cannot exceed remaining unallocated donation surplus.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modalAllocate')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Proposed Allocation</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Application Scripts -->
+  <script src="/static/js/app.js"></script>
+  <script src="/static/js/dashboard.js"></script>
+  <script src="/static/js/map.js"></script>
+</body>
+</html>
